@@ -101,6 +101,8 @@
 #include "utils/tqual.h"
 #include "utils/typcache.h"
 
+PostDefineRelation_hook_type DefineRelation_hook = NULL;
+PreDropRelations_hook_type PreDropRelations_hook = NULL;
 
 /*
  * ON COMMIT action list
@@ -992,6 +994,9 @@ DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 	 * visible to anyone else anyway, until commit).
 	 */
 	relation_close(rel, NoLock);
+	
+	if (DefineRelation_hook)
+		(*DefineRelation_hook)(stmt, ownerId, namespaceId, relationId);
 
 	return address;
 }

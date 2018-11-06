@@ -69,6 +69,7 @@
 #include "commands/schemacmds.h"
 #include "commands/seclabel.h"
 #include "commands/sequence.h"
+#include "commands/tablecmds.h"
 #include "commands/trigger.h"
 #include "commands/typecmds.h"
 #include "nodes/nodeFuncs.h"
@@ -413,6 +414,8 @@ performMultipleDeletions(const ObjectAddresses *objects,
 						   flags,
 						   (objects->numrefs == 1 ? objects->refs : NULL));
 
+	if (PreDropRelations_hook)
+		PreDropRelations_hook(targetObjects);
 	/* do the deed */
 	deleteObjectsInList(targetObjects, &depRel, flags);
 

@@ -21,6 +21,13 @@
 #include "storage/lock.h"
 #include "utils/relcache.h"
 
+// all hooks must not modify the utility call, i.e. elog(ERROR, ...) to abort 
+typedef void (*PostDefineRelation_hook_type)(CreateStmt *stmt, Oid ownerId, Oid namespaceId, Oid relid);
+extern PostDefineRelation_hook_type DefineRelation_hook;
+typedef void (*PreDropRelations_hook_type)(ObjectAddresses *targetObjects);
+extern PreDropRelations_hook_type PreDropRelations_hook;
+typedef void (*PreTruncate_hook_type)(ObjectAddress *targetObjects);
+extern PreTruncate_hook_type PreTruncate_hook;
 
 extern ObjectAddress DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 			   ObjectAddress *typaddress, const char *queryString);
