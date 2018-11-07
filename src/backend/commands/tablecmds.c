@@ -101,8 +101,11 @@
 #include "utils/tqual.h"
 #include "utils/typcache.h"
 
-PostDefineRelation_hook_type DefineRelation_hook = NULL;
+PostDefineRelation_hook_type PostDefineRelation_hook = NULL;
 PreDropRelations_hook_type PreDropRelations_hook = NULL;
+PreTruncate_hook_type PreTruncate_hook = NULL;
+PostAlterTableNS_hook_type PostAlterTableNS_hook = NULL;
+PostAlterTableOwner_hook_type PostAlterTableOwner_hook = NULL;
 
 /*
  * ON COMMIT action list
@@ -995,8 +998,8 @@ DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 	 */
 	relation_close(rel, NoLock);
 	
-	if (DefineRelation_hook)
-		(*DefineRelation_hook)(stmt, ownerId, namespaceId, relationId);
+	if (PostDefineRelation_hook)
+		PostDefineRelation_hook(stmt, ownerId, namespaceId, relationId);
 
 	return address;
 }
@@ -1563,6 +1566,8 @@ ExecuteTruncateGuts(List *explicit_rels, List *relids, List *relids_logged,
 		if (rel->rd_rel->relkind == RELKIND_PARTITIONED_TABLE)
 			continue;
 
+		if (PreTruncate_hook)
+			PreTruncate_hook(rel);
 		/*
 		 * Normally, we need a transaction-safe truncation here.  However, if
 		 * the table was either created in the current (sub)transaction or has
@@ -10486,6 +10491,8 @@ ATExecChangeOwner(Oid relationOid, Oid newOwnerId, bool recursing, LOCKMODE lock
 	}
 
 	InvokeObjectPostAlterHook(RelationRelationId, relationOid, 0);
+	if (PostAlterTableOwner_hook)
+		PostAlterTableOwner_hook(tuple_class, relationOid, tuple_class->relowner, newOwnerId);
 
 	ReleaseSysCache(tuple);
 	heap_close(class_rel, RowExclusiveLock);
@@ -12969,6 +12976,8 @@ AlterTableNamespace(AlterObjectSchemaStmt *stmt, Oid *oldschema)
 	/* close rel, but keep lock until commit */
 	relation_close(rel, NoLock);
 
+	if (PostAlterTableNS_hook)
+		PostAlterTableNS_hook(stmt, relid, oldNspOid, nspOid);
 	return myself;
 }
 

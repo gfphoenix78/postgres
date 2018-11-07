@@ -415,7 +415,7 @@ performMultipleDeletions(const ObjectAddresses *objects,
 						   (objects->numrefs == 1 ? objects->refs : NULL));
 
 	if (PreDropRelations_hook)
-		PreDropRelations_hook(targetObjects);
+		PreDropRelations_hook(targetObjects->refs, targetObjects->numrefs);
 	/* do the deed */
 	deleteObjectsInList(targetObjects, &depRel, flags);
 

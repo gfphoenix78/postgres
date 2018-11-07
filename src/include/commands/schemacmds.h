@@ -18,6 +18,10 @@
 #include "catalog/objectaddress.h"
 #include "nodes/parsenodes.h"
 
+typedef void (*PostCreateSchema_hook_type)(CreateSchemaStmt *stmt, const char *schemaname,
+		Oid schema_oid, Oid owner_uid);
+extern PostCreateSchema_hook_type PostCreateSchema_hook;
+
 extern Oid CreateSchemaCommand(CreateSchemaStmt *parsetree,
 					const char *queryString,
 					int stmt_location, int stmt_len);

@@ -17,17 +17,22 @@
 #include "access/htup.h"
 #include "catalog/dependency.h"
 #include "catalog/objectaddress.h"
+#include "catalog/pg_class.h"
 #include "nodes/parsenodes.h"
 #include "storage/lock.h"
 #include "utils/relcache.h"
 
 // all hooks must not modify the utility call, i.e. elog(ERROR, ...) to abort 
 typedef void (*PostDefineRelation_hook_type)(CreateStmt *stmt, Oid ownerId, Oid namespaceId, Oid relid);
-extern PostDefineRelation_hook_type DefineRelation_hook;
-typedef void (*PreDropRelations_hook_type)(ObjectAddresses *targetObjects);
+extern PostDefineRelation_hook_type PostDefineRelation_hook;
+typedef void (*PreDropRelations_hook_type)(ObjectAddress *targetObjects, int numrefs);
 extern PreDropRelations_hook_type PreDropRelations_hook;
-typedef void (*PreTruncate_hook_type)(ObjectAddress *targetObjects);
+typedef void (*PreTruncate_hook_type)(Relation relation);
 extern PreTruncate_hook_type PreTruncate_hook;
+typedef void (*PostAlterTableNS_hook_type)(AlterObjectSchemaStmt *stmt, Oid relid, Oid oldns, Oid newns);
+extern PostAlterTableNS_hook_type PostAlterTableNS_hook;
+typedef void (*PostAlterTableOwner_hook_type)(Form_pg_class pg_class, Oid relid, Oid oldOwnerId, Oid newOwnerId);
+extern PostAlterTableOwner_hook_type PostAlterTableOwner_hook;
 
 extern ObjectAddress DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 			   ObjectAddress *typaddress, const char *queryString);

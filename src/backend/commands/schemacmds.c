@@ -36,6 +36,7 @@
 #include "utils/syscache.h"
 
 
+PostCreateSchema_hook_type PostCreateSchema_hook = NULL;
 static void AlterSchemaOwner_internal(HeapTuple tup, Relation rel, Oid newOwnerId);
 
 /*
@@ -160,6 +161,8 @@ CreateSchemaCommand(CreateSchemaStmt *stmt, const char *queryString,
 	ObjectAddressSet(address, NamespaceRelationId, namespaceId);
 	EventTriggerCollectSimpleCommand(address, InvalidObjectAddress,
 									 (Node *) stmt);
+	if (PostCreateSchema_hook)
+		PostCreateSchema_hook(stmt, stmt->schemaname, namespaceId, owner_uid);
 
 	/*
 	 * Examine the list of commands embedded in the CREATE SCHEMA command, and
