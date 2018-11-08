@@ -16,6 +16,8 @@
 #include "catalog/pg_class.h"
 #include "catalog/pg_namespace.h"
 #include "catalog/objectaddress.h"
+#include "catalog/objectaccess.h"
+#include "commands/schemacmds.h"
 #include "commands/tablecmds.h"
 #include "port.h"
 #include "utils/elog.h"
@@ -29,18 +31,27 @@ PG_MODULE_MAGIC;
 void		_PG_init(void);
 void		_PG_fini(void);
 
+static object_access_hook_type prev_object_access_hook;
 static PostDefineRelation_hook_type prev_define_relation;
 static PreDropRelations_hook_type prev_drop_relations;
 static PreTruncate_hook_type prev_truncate;
 static PostAlterTableNS_hook_type prev_alter_schema;
 static PostAlterTableOwner_hook_type prev_alter_owner;
+static PostCreateSchema_hook_type prev_create_schema;
 
+static void _object_access_hook(ObjectAccessType access, Oid classId, Oid objectId, int subId, void *arg);
 static void define_relation(CreateStmt *stmt, Oid ownerId, Oid namespaceId, Oid relid);
 static void drop_relations(ObjectAddress *targetObjects, int numrefs);
 static void _truncate(Relation relation);
 static void alter_schema(AlterObjectSchemaStmt *stmt, Oid relid, Oid oldns, Oid newns);
 static void alter_owner(Form_pg_class pg_class, Oid relid, Oid oldOwnerId, Oid newOwnerId);
 
+
+static void
+_object_access_hook(ObjectAccessType access, Oid classId, Oid objectId, int subId, void *arg)
+{
+	elog(NOTICE, "access=%d, classId=%u, oid=%u, subId=%d, arg=%p", (int)access, classId, objectId, subId, arg);
+}
 static void
 define_relation(CreateStmt *stmt, Oid ownerId, Oid namespaceId, Oid relid)
 {
@@ -85,6 +96,12 @@ alter_owner(Form_pg_class pg_class, Oid relid, Oid oldOwnerId, Oid newOwnerId)
 {
 	elog(NOTICE, "alter owner: relid = %u, %u => %u", relid, oldOwnerId, newOwnerId);
 }
+static void 
+create_schema(CreateSchemaStmt *stmt, const char *schemaname, Oid schema_oid, Oid owner_uid)
+{
+	elog(NOTICE, "create schema '%s' id = %u owner= %u", schemaname, schema_oid, owner_uid);
+}
+
 /*
  * Module Load Callback
  */
@@ -92,8 +109,8 @@ void
 _PG_init(void)
 {
 	/* Install Hooks */
-	//original_client_auth_hook = ClientAuthentication_hook;
-	//ClientAuthentication_hook = auth_delay_checks;
+	prev_object_access_hook = object_access_hook;
+	object_access_hook = _object_access_hook;
 
 	prev_define_relation = PostDefineRelation_hook;
 	PostDefineRelation_hook = define_relation;
@@ -110,11 +127,16 @@ _PG_init(void)
 	prev_alter_owner = PostAlterTableOwner_hook;
 	PostAlterTableOwner_hook = alter_owner;
 
+	prev_create_schema = PostCreateSchema_hook;
+	PostCreateSchema_hook = create_schema;
+
 	elog(NOTICE, "disk_quota_init: hook version");
 }
 void
 _PG_fini(void)
 {
+	object_access_hook = prev_object_access_hook;
+	prev_object_access_hook = NULL;
 	PostDefineRelation_hook = prev_define_relation;
 	prev_define_relation = NULL;
 
@@ -129,6 +151,9 @@ _PG_fini(void)
 
 	PostAlterTableOwner_hook = prev_alter_owner;
 	prev_alter_owner = NULL;
+
+	PostCreateSchema_hook = prev_create_schema;
+	prev_create_schema = NULL;
 
 	elog(NOTICE, "disk_quota_fini: hook version");
 }
