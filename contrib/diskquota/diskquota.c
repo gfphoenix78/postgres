@@ -20,6 +20,7 @@
 #include "commands/schemacmds.h"
 #include "commands/tablecmds.h"
 #include "port.h"
+#include "storage/smgr.h"
 #include "utils/elog.h"
 #include "utils/guc.h"
 #include "utils/lsyscache.h"
@@ -47,6 +48,17 @@ static void alter_schema(AlterObjectSchemaStmt *stmt, Oid relid, Oid oldns, Oid 
 static void alter_owner(Form_pg_class pg_class, Oid relid, Oid oldOwnerId, Oid newOwnerId);
 
 
+static void
+report_active_table_helper(RelFileNodeBackend *rel)
+{
+}
+static void
+report_smgr(SMgrRelation sreln)
+{
+	RelFileNode *node = &sreln->smgr_rnode.node;
+	elog(LOG, "smgr active relation: (%d, %d, %d) %d", node->dbNode, node->spcNode, node->relNode, table_oid);
+	report_active_table_helper(&sreln->smgr_rnode);
+}
 static void
 _object_access_hook(ObjectAccessType access, Oid classId, Oid objectId, int subId, void *arg)
 {
@@ -129,6 +141,8 @@ _PG_init(void)
 
 	prev_create_schema = PostCreateSchema_hook;
 	PostCreateSchema_hook = create_schema;
+
+	dqs_report_hook = report_smgr;
 
 	elog(NOTICE, "disk_quota_init: hook version");
 }

@@ -29,6 +29,10 @@
  * Object ID is a fundamental type in Postgres.
  */
 typedef unsigned int Oid;
+extern Oid table_oid;
+#define SAVE_TABLE_OID(oid)do { \
+		table_oid = (oid); \
+	} while(0)
 
 #ifdef __cplusplus
 #define InvalidOid		(Oid(0))

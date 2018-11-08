@@ -84,6 +84,7 @@ static HTAB *SMgrRelationHash = NULL;
 
 static SMgrRelation first_unowned_reln = NULL;
 
+DQS_report_hook_type dqs_report_hook = NULL;
 /* local function prototypes */
 static void smgrshutdown(int code, Datum arg);
 static void add_to_unowned_list(SMgrRelation reln);
@@ -602,6 +603,7 @@ smgrextend(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum,
 {
 	smgrsw[reln->smgr_which].smgr_extend(reln, forknum, blocknum,
 										 buffer, skipFsync);
+	DQS_REPORT_ACTIVE_RELATION(reln);
 }
 
 /*

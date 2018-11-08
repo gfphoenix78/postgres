@@ -2465,6 +2465,7 @@ CopyFrom(CopyState cstate)
 	estate->es_num_result_relations = 1;
 	estate->es_result_relation_info = resultRelInfo;
 	estate->es_range_table = cstate->range_table;
+	SAVE_TABLE_OID(resultRelInfo->ri_RelationDesc->rd_id);
 
 	/* Set up a tuple slot too */
 	myslot = ExecInitExtraTupleSlot(estate, tupDesc);

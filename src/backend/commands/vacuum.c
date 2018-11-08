@@ -334,6 +334,7 @@ vacuum(int options, List *relations, VacuumParams *params,
 		foreach(cur, relations)
 		{
 			VacuumRelation *vrel = lfirst_node(VacuumRelation, cur);
+			SAVE_TABLE_OID(vrel->oid);
 
 			if (options & VACOPT_VACUUM)
 			{

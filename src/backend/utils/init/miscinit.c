@@ -56,6 +56,7 @@
 #define DIRECTORY_LOCK_FILE		"postmaster.pid"
 
 ProcessingMode Mode = InitProcessing;
+Oid table_oid;
 
 /* List of lock files to be removed at proc exit */
 static List *lock_files = NIL;

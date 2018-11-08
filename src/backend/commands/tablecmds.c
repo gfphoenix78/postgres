@@ -1558,6 +1558,8 @@ ExecuteTruncateGuts(List *explicit_rels, List *relids, List *relids_logged,
 	 */
 	mySubid = GetCurrentSubTransactionId();
 
+	/* we should use truncate-hook to report truncate op, not smgr-functions */
+	SAVE_TABLE_OID(InvalidOid);
 	foreach(cell, rels)
 	{
 		Relation	rel = (Relation) lfirst(cell);
